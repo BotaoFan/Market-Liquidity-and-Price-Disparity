@@ -262,6 +262,66 @@ if __name__=="__main__":
         result_df[id] = pd.DataFrame(temp_result['mean'])
     factors_data['supply'] = result_df
 
+    #Generate csspeard_A
+    high_A = raw_data['high_A'].copy()
+    low_A= raw_data['low_A'].copy()
+    high_A.index = pd.to_datetime(high_A.index)
+    low_A.index = pd.to_datetime(low_A.index)
+    result_df = pd.DataFrame([], index=year_month_index)
+    for id, A_code in zip(stocks_list['id'], stocks_list['A_code']):
+        cal_csspread=pd.DataFrame([], index=date_index)
+        cal_csspread['year_month']=[str(y)+'-'+str(m) for y,m in zip(cal_csspread.index.year,cal_csspread.index.month)]
+        cal_csspread['high']=high_A[A_code]
+        cal_csspread['low']=low_A[A_code]
+        cal_csspread['high_next_day']=cal_csspread['high'].shift(-1)
+        cal_csspread['low_next_day']=cal_csspread['low'].shift(-1)
+        cal_csspread['highest']=cal_csspread[['high','high_next_day']].min(axis=1)
+        cal_csspread['lowest'] = cal_csspread[['low', 'low_next_day']].min(axis=1)
+        cal_csspread['h_l_ln']=(np.log(cal_csspread['high']/cal_csspread['low']))**2
+        cal_csspread['h_next_l_next_ln']=(np.log(cal_csspread['high_next_day']/cal_csspread['low_next_day']))**2
+        cal_csspread['gamma']=(np.log(cal_csspread['highest']/cal_csspread['lowest']))**2
+        cal_csspread['beta']=(cal_csspread['h_l_ln']+cal_csspread['h_next_l_next_ln'])
+        cal_csspread['alpha']=(np.sqrt(2*cal_csspread['beta'])-np.sqrt(cal_csspread['beta']))/(3-2*np.sqrt(2))-np.sqrt(cal_csspread['gamma']/(3-2*np.sqrt(2)))
+        cal_csspread['csspread']=(2*(np.exp(cal_csspread['alpha'])-1))/(1+np.exp(cal_csspread['alpha']))
+        if cal_csspread.shape[0] > 0:
+            cal_csspread_grouped = cal_csspread.groupby('year_month')
+            temp_result = cal_csspread_grouped['csspread'].agg(['count', 'mean'])
+            temp_result.loc[temp_result['count'] < 10, 'mean'] = np.nan
+            result_df[id] = pd.DataFrame(temp_result['mean'])
+        else:
+            result_df[id] = np.nan
+    factors_data['csspread_A'] = result_df
+
+    #Generate csspeard_H
+    high_H = raw_data['high_H'].copy()
+    low_H= raw_data['low_H'].copy()
+    high_H.index = pd.to_datetime(high_H.index)
+    low_H.index = pd.to_datetime(low_H.index)
+    result_df = pd.DataFrame([], index=year_month_index)
+    for id, H_code in zip(stocks_list['id'], stocks_list['H_code']):
+        cal_csspread=pd.DataFrame([], index=date_index)
+        cal_csspread['year_month']=[str(y)+'-'+str(m) for y,m in zip(cal_csspread.index.year,cal_csspread.index.month)]
+        cal_csspread['high']=high_H[H_code]
+        cal_csspread['low']=low_H[H_code]
+        cal_csspread['high_next_day']=cal_csspread['high'].shift(-1)
+        cal_csspread['low_next_day']=cal_csspread['low'].shift(-1)
+        cal_csspread['highest']=cal_csspread[['high','high_next_day']].min(axis=1)
+        cal_csspread['lowest'] = cal_csspread[['low', 'low_next_day']].min(axis=1)
+        cal_csspread['h_l_ln']=(np.log(cal_csspread['high']/cal_csspread['low']))**2
+        cal_csspread['h_next_l_next_ln']=(np.log(cal_csspread['high_next_day']/cal_csspread['low_next_day']))**2
+        cal_csspread['gamma']=(np.log(cal_csspread['highest']/cal_csspread['lowest']))**2
+        cal_csspread['beta']=(cal_csspread['h_l_ln']+cal_csspread['h_next_l_next_ln'])
+        cal_csspread['alpha']=(np.sqrt(2*cal_csspread['beta'])-np.sqrt(cal_csspread['beta']))/(3-2*np.sqrt(2))-np.sqrt(cal_csspread['gamma']/(3-2*np.sqrt(2)))
+        cal_csspread['csspread']=(2*(np.exp(cal_csspread['alpha'])-1))/(1+np.exp(cal_csspread['alpha']))
+        if cal_csspread.shape[0] > 0:
+            cal_csspread_grouped = cal_csspread.groupby('year_month')
+            temp_result = cal_csspread_grouped['csspread'].agg(['count', 'mean'])
+            temp_result.loc[temp_result['count'] < 10, 'mean'] = np.nan
+            result_df[id] = pd.DataFrame(temp_result['mean'])
+        else:
+            result_df[id] = np.nan
+    factors_data['csspread_H'] = result_df
+
     #Generate index_CSI300/index_HSCEI
     index_CSI300 = raw_data['index_CSI300'].copy()
     index_HSCEI = raw_data['index_HSCEI'].copy()
